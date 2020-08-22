@@ -1,9 +1,7 @@
 {
   "description": "With Meneame Search Provider you can search information in Meneame from GNOME Shell.", 
   "name": "Meneame Search Provider", 
-  "shell-version": [
-      3.36
-  ], 
+  "shell-version": ["3.36"], 
   "url": "https://gitlab.gnome.org/atareao/meneame-search-provider.git", 
   "uuid": "meneame-search-provider@atareao.es", 
   "gettext-domain": "meneame-search-provider@atareao.es", 
