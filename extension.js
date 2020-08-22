@@ -1,26 +1,25 @@
 /*
- * Meneame Search Provider
- * An extension to search videos in Meneame with GNOME Shell
+ * This file is part of meneame-search-provider
  *
- * Copyright (C) 2018
- *     Lorenzo Carbonell <lorenzo.carbonell.cerezo@gmail.com>,
- * https://www.atareao.es
+ * Copyright (c) 2018 Lorenzo Carbonell Cerezo <a.k.a. atareao>
  *
- * This file is part of Meneame Search Provider
- * 
- * Meneame Search Provider is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
  *
- * Meneame Search Provider is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License
- * along with this extensions.
- * If not, see <http://www.gnu.org/licenses/>.
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
  */
 
 const St = imports.gi.St;
@@ -53,7 +52,8 @@ class MeneameSearchProvider{
             return 'Meneame Search Provider';
         };
         this.appInfo.get_icon = ()=>{
-            return new Gio.ThemedIcon({name: "meneame"});
+            let gicon = Gio.icon_new_for_string(Extension.path + '/icons/meneane.svg');
+            return gicon;
         };
 
         // Custom messages that will be shown as search results
@@ -63,19 +63,19 @@ class MeneameSearchProvider{
                 name: _('Meneame'),
                 description : _('Loading items from Meneame, please wait...'),
                 // TODO: do these kinds of icon creations better
-                createIcon: this.createIcon
+                createIcon: ()=>{}
             },
             '__error__': {
                 id: '__error__',
                 name: _('Meneame'),
                 description : _('Oops, an error occurred while searching.'),
-                createIcon: this.createIcon
+                createIcon: ()=>{}
             },
             '__nothing_found__': {
                 id: '__nothing_found__',
                 name: _('Meneame'),
                 description : _('Oops, I did\'nt found what you are looking for.'),
-                createIcon: this.createIcon
+                createIcon: ()=>{}
             }
         };
         // API results will be stored here
@@ -83,8 +83,6 @@ class MeneameSearchProvider{
         this._api = new MeneameClient.MeneameClient();
         // Wait before making an API request
         this._timeoutId = 0;
-
-
     }
 
     /**
@@ -121,9 +119,7 @@ class MeneameSearchProvider{
      */
     getResultMetas(identifiers, callback) {
         let metas = [];
-        let scale_factor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
         for (let i = 0; i < identifiers.length; i++) {
-            let result;
             // return predefined message if it exists
             if (identifiers[i] in this._messages) {
                 metas.push(this._messages[identifiers[i]]);
@@ -131,27 +127,25 @@ class MeneameSearchProvider{
                 // TODO: check for messages that don't exist, show generic error message
                 let meta = this.resultsMap.get(identifiers[i]);
                 if (meta){
+                    log("Id: " + meta.id + " Name: "+ meta.label);
+                    log("Url: " + meta.thumbnail_url);
+                    log("widht: " + meta.thumbnail_width);
+                    log("height: " + meta.thumbnail_height);
                     metas.push({
                         id: meta.id,
                         name: meta.label,
                         description : meta.description,
                         createIcon: (size)=>{
+                            log('box')
                             let box = new Clutter.Box();
-                            /*
-                            let icon = new St.Icon({gicon: new Gio.ThemedIcon({name: 'meneame'}),
-                                                    icon_size: size});
+                            let gicon = Gio.icon_new_for_string(meta.thumbnail_url);
+                            if(!gicon){
+                                gicon = Gio.icon_new_for_string(Extension.path + '/icons/meneane.svg');
+                            }
+                            let icon = new St.Icon({gicon: gicon,
+                                                    style_class: 'meneame-icon'});
+                            icon.set_icon_size(155);
                             box.add_child(icon);
-                            */
-                            let image_file = Gio.file_new_for_uri( meta.thumbnail_url);
-                            let texture_cache = St.TextureCache.get_default();
-                            let icon = texture_cache.load_file_async(
-                                image_file,
-                                meta.thumbnail_width,
-                                meta.thumbnail_height,
-                                scale_factor
-                            );
-                            box.add_child(icon);
-                            box.set_size(155,155);
                             return box;
                         }
                     });
@@ -210,8 +204,8 @@ class MeneameSearchProvider{
      * @param {Array} terms
      * @returns {Array}
      */
-    getSubsetResultSearch(previousResults, terms) {
-        return [];
+    getSubsearchResultSet(previousResults, terms, callback, cancellable) {
+        this.getInitialResultSet(terms, callback);
     }
 
     /**
